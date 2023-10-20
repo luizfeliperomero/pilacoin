@@ -3,6 +3,7 @@ package ufsm.csi.pilacoin.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.SneakyThrows;
+import org.springframework.amqp.core.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.Constants;
@@ -61,8 +62,8 @@ public class MiningService implements Runnable{
             count++;
             if(hash.compareTo(DifficultyService.currentDifficulty) < 0) {
                 this.rabbitService.send("pila-minerado", json);
-                System.out.println(MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + json);
-                System.out.println(Constants.ANSI_PURPLE + "Found 1 Pilacoin in " + count + " tries" + Constants.ANSI_RESET);
+                System.out.println( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Constants.BLACK_BACKGROUND + "Pilacoin found in " + Constants.WHITE_BOLD_BRIGHT + count + " tries" + Constants.ANSI_RESET);
+                System.out.println(json);
                 count = 0;
             }
         }

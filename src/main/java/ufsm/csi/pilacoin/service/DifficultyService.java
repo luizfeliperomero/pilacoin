@@ -38,7 +38,7 @@ public class DifficultyService {
         }
         prevDifficulty = currentDifficulty;
         if(!threadsAlreadyStarted) {
-            this.miningService.startMiningThreads(Constants.miningThreadsNumber);
+            this.miningService.startMiningThreads(Constants.MINING_THREADS_NUMBER);
             this.threadsAlreadyStarted = true;
         }
     }
