@@ -15,6 +15,7 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.util.Date;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 @Service
 public class MiningService implements Runnable{
@@ -31,9 +32,10 @@ public class MiningService implements Runnable{
             this.rabbitService.send("pila-minerado", "");
             this.firstPilaSent = true;
         }
-        for(int i = 0; i < threads; i++) {
-            new Thread(new MiningService(rabbitService)).start();
-        }
+        IntStream.range(0, threads)
+                .mapToObj(i -> new MiningService(this.rabbitService))
+                .map(Thread::new)
+                .forEach(Thread::start);
     }
 
     @Override
@@ -45,7 +47,6 @@ public class MiningService implements Runnable{
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         String json = "";
         PilaCoin pilaCoin = PilaCoin.builder()
-                .dataCriacao(new Date(System.currentTimeMillis()))
                 .chaveCriador(Constants.PUBLICKEY.getBytes(StandardCharsets.UTF_8))
                 .nomeCriador("Luiz Felipe")
                 .build();
@@ -54,15 +55,15 @@ public class MiningService implements Runnable{
             Random random = new Random();
             byte[] byteArray = new byte[256 / 8];
             random.nextBytes(byteArray);
-            ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
             pilaCoin.setNonce(new BigInteger(md.digest(byteArray)).abs().toString());
             pilaCoin.setDataCriacao(new Date(System.currentTimeMillis()));
+            ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
             json = ow.writeValueAsString(pilaCoin);
             hash = new BigInteger(md.digest(json.getBytes(StandardCharsets.UTF_8))).abs();
             count++;
             if(hash.compareTo(DifficultyService.currentDifficulty) < 0) {
                 this.rabbitService.send("pila-minerado", json);
-                System.out.println( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Constants.BLACK_BACKGROUND + "Pilacoin found in " + Constants.WHITE_BOLD_BRIGHT + count + " tries" + Constants.ANSI_RESET);
+                System.out.printf( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Constants.BLACK_BACKGROUND + "Pilacoin found in " + Constants.WHITE_BOLD_BRIGHT + "%,d" + " tries" + Constants.ANSI_RESET + "\n", count);
                 System.out.println(json);
                 count = 0;
             }
