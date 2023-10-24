@@ -51,13 +51,13 @@ public class MiningService implements Runnable{
                 .nomeCriador("Luiz Felipe")
                 .build();
         int count = 0;
+        Random random = new Random();
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         while(true) {
-            Random random = new Random();
             byte[] byteArray = new byte[256 / 8];
             random.nextBytes(byteArray);
             pilaCoin.setNonce(new BigInteger(md.digest(byteArray)).abs().toString());
             pilaCoin.setDataCriacao(new Date(System.currentTimeMillis()));
-            ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
             json = ow.writeValueAsString(pilaCoin);
             hash = new BigInteger(md.digest(json.getBytes(StandardCharsets.UTF_8))).abs();
             count++;
