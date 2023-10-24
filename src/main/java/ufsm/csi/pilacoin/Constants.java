@@ -17,5 +17,5 @@ public class Constants {
     public static final String YELLOW_BOLD_BRIGHT = "\033[1;93m";
     public static final String WHITE_BOLD_BRIGHT = "\033[1;97m";
     public static final String BLACK_BACKGROUND = "\033[40m";
-    public static final int MINING_THREADS_NUMBER = 100;
+    public static final int MINING_THREADS_NUMBER = 4;
 }
