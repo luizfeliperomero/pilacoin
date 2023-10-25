@@ -25,10 +25,6 @@ public class MiningService implements Runnable, DifficultyObserver {
     private BigInteger difficulty;
     private final SharedResources sharedResources;
 
-    private final Thread shutdownThread = new Thread(() -> {
-
-    });
-
 
     public MiningService(RabbitService rabbitService, SharedResources sharedResources) {
         this.rabbitService = rabbitService;
