@@ -18,5 +18,5 @@ public class Constants {
     public static final String WHITE_BOLD_BRIGHT = "\033[1;97m";
     public static final String BLACK_BACKGROUND = "\033[40m";
     public static final String PURPLE_BOLD_BRIGHT = "\033[1;95m";
-    public static final int MINING_THREADS_NUMBER = 4;
+    public static final int MINING_THREADS_NUMBER = Runtime.getRuntime().availableProcessors();
 }
