@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.Constants;
+import ufsm.csi.pilacoin.model.Block;
 import ufsm.csi.pilacoin.model.DifficultyObserver;
 import ufsm.csi.pilacoin.model.PilaCoin;
 import ufsm.csi.pilacoin.model.PilaValidado;
@@ -59,12 +60,14 @@ public class RabbitService implements DifficultyObserver {
         } else this.send("pila-minerado", pilaCoinStr);
     }
 
+
     @RabbitListener(queues = {"luiz_felipe"})
     public void rabbitResponse(@Payload Message message) {
         String responseMessage = new String(message.getBody());
         String outputColor = responseMessage.contains("erro") ? Constants.ANSI_RED : Constants.ANSI_GREEN;
         System.out.println(outputColor + responseMessage + Constants.ANSI_RESET);
     }
+
 
     @Override
     public void update(BigInteger difficulty) {
