@@ -1,22 +1,29 @@
 package ufsm.csi.pilacoin.shared;
 
+import lombok.Data;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import ufsm.csi.pilacoin.Constants;
 import ufsm.csi.pilacoin.service.MessageFormatterService;
 
 import java.math.BigInteger;
-import java.util.Arrays;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
+@Data
 public class SharedResources {
     private Map<BigInteger, Integer> pilaCoinsFoundPerDifficulty = new HashMap<BigInteger, Integer>();
     private Map<String, Integer> pilaCoinsFoundPerThread = new HashMap<String, Integer>();
     private final Object lock = new Object();
     private static volatile SharedResources  instance;
     private final AtomicBoolean alreadyExecutedShutdown = new AtomicBoolean(false);
+    private PublicKey publicKey;
+    private PrivateKey privateKey;
     private final Thread shutdownThread = new Thread(() -> {
         synchronized (lock) {
             if (this.alreadyExecutedShutdown.compareAndSet(false, true)) {
@@ -24,7 +31,13 @@ public class SharedResources {
             }
         }
     });
-    private SharedResources (){}
+    @SneakyThrows
+    private SharedResources (){
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(1024);
+        this.publicKey = keyPairGenerator.generateKeyPair().getPublic();
+        this.privateKey = keyPairGenerator.generateKeyPair().getPrivate();
+    }
     public static SharedResources getInstance() {
         SharedResources result = instance;
         if(result == null) {

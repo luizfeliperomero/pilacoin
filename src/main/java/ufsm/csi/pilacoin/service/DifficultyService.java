@@ -67,6 +67,7 @@ public class DifficultyService implements DifficultyObservable {
     public DifficultyService(RabbitService rabbitService, SharedResources sharedResources) {
         this.rabbitService = rabbitService;
         this.sharedResources = sharedResources;
+        this.observers.add(this.rabbitService);
     }
     @SneakyThrows
     @RabbitListener(queues = {"${queue.dificuldade}"})
