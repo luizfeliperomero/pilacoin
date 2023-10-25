@@ -35,13 +35,11 @@ public class MiningService implements Runnable, DifficultyObserver {
     @Override
     @SneakyThrows
     public void run() {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(1024);
         BigInteger hash;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         String json = "";
         PilaCoin pilaCoin = PilaCoin.builder()
-                .chaveCriador(Constants.PUBLICKEY.getBytes(StandardCharsets.UTF_8))
+                .chaveCriador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
                 .nomeCriador("Luiz Felipe")
                 .build();
         int count = 0;
