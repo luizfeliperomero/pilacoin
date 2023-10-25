@@ -66,7 +66,7 @@ public class BlockService implements BlockObservable {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         BigInteger hash = new BigInteger(md.digest(blockStr.getBytes(StandardCharsets.UTF_8))).abs();
         Block block = this.objectReader.readValue(blockStr, Block.class);
-        if(block.getNonce().compareTo(this.difficultyService.getCurrentDifficulty()) < 0) {
+        if(hash.compareTo(this.difficultyService.getCurrentDifficulty()) < 0) {
             Cipher encryptCipher = Cipher.getInstance("RSA");
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
             byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
