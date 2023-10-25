@@ -46,10 +46,14 @@ public class DifficultyService implements DifficultyObservable {
         this.miningPeriodMinutes = this.miningPeriodSeconds / 60;
         this.miningPeriodHours = this.miningPeriodMinutes / 60;
         if(this.miningPeriodSeconds < 0 || this.miningPeriodSeconds >= 60) {
-            this.miningPeriodSeconds = 0L;
+            if(this.miningPeriodSeconds > 60) {
+               this.miningPeriodSeconds = this.miningPeriodSeconds % 60;
+            } else this.miningPeriodSeconds = 0L;
         }
         if(this.miningPeriodMinutes < 0 || this.miningPeriodMinutes >= 60) {
-            this.miningPeriodMinutes = 0L;
+            if(this.miningPeriodMinutes > 60) {
+                this.miningPeriodMinutes = this.miningPeriodMinutes % 60;
+            } else this.miningPeriodMinutes = 0L;
         }
         if(this.miningPeriodHours < 0) {
             this.miningPeriodSeconds = 0L;
