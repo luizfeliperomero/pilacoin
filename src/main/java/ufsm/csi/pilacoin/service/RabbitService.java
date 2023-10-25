@@ -51,7 +51,7 @@ public class RabbitService implements DifficultyObserver {
             byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
             PilaValidado pilaValidado = PilaValidado.builder()
                     .nomeValidador("Luiz Felipe")
-                    .chavePublicaValidador(Constants.PUBLICKEY.getBytes())
+                    .chavePublicaValidador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
                     .assinaturaPilaCoin(encryptCipher.doFinal(hashByteArr))
                     .pilaCoin(pilaCoin)
                     .build();
