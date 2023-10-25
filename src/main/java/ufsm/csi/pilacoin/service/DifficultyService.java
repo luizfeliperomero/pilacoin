@@ -1,11 +1,8 @@
 package ufsm.csi.pilacoin.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import lombok.SneakyThrows;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.core.Local;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.Constants;
@@ -15,14 +12,12 @@ import ufsm.csi.pilacoin.model.DifficultyObserver;
 import ufsm.csi.pilacoin.shared.SharedResources;
 
 import java.math.BigInteger;
-import java.time.Duration;
-import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.IntStream;
 
 @Service
+@Data
 public class DifficultyService implements DifficultyObservable {
     private RabbitService rabbitService;
     private boolean firstPilaSent = false;
