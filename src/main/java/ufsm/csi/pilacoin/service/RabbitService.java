@@ -41,17 +41,19 @@ public class RabbitService implements DifficultyObserver {
 
     @SneakyThrows
     @RabbitListener(queues = {"pila-minerado"})
-    public void listenToPilas(@Payload String pilaCoinStr) {
+    public void validatePila(@Payload String pilaCoinStr) {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         BigInteger hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
         PilaCoin pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
-        if(!pilaCoin.getNomeCriador().equals("Luiz Felipe") && (new BigInteger(pilaCoin.getNonce()).compareTo(this.difficulty) < 0)) {
+        hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
+
+        if(this.difficulty != null && pilaCoin.getNomeCriador().equals("Luiz Felipe") && (hash.compareTo(this.difficulty) < 0)) {
             Cipher encryptCipher = Cipher.getInstance("RSA");
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
             byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
             PilaValidado pilaValidado = PilaValidado.builder()
                     .nomeValidador("Luiz Felipe")
-                    .chavePublicaValidador(Constants.PUBLICKEY.getBytes())
+                    .chavePublicaValidador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
                     .assinaturaPilaCoin(encryptCipher.doFinal(hashByteArr))
                     .pilaCoin(pilaCoin)
                     .build();
