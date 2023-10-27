@@ -3,7 +3,7 @@ package ufsm.csi.pilacoin.shared;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
-import ufsm.csi.pilacoin.Constants;
+import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.service.MessageFormatterService;
 
 import java.math.BigInteger;
@@ -79,22 +79,22 @@ public class SharedResources {
 
     private void printMiningData() {
         System.out.println("\n");
-        System.out.println(Constants.YELLOW_BOLD_BRIGHT + "Mining Data" + Constants.ANSI_RESET);
-        System.out.println(Constants.ANSI_CYAN + MessageFormatterService.surroundMessage("-","Pilacoins found per difficulty") + Constants.ANSI_RESET);
+        System.out.println(Colors.YELLOW_BOLD_BRIGHT + "Mining Data" + Colors.ANSI_RESET);
+        System.out.println(Colors.ANSI_CYAN + MessageFormatterService.surroundMessage("-","Pilacoins found per difficulty") + Colors.ANSI_RESET);
         pilaCoinsFoundPerDifficulty.entrySet().stream()
                 .sorted((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()))
                 .forEach(entry -> {
                     BigInteger k = entry.getKey();
                     Integer v = entry.getValue();
-                    System.out.println("| " + Constants.WHITE_BOLD_BRIGHT + k + ": " + Constants.ANSI_GREEN + v + Constants.ANSI_RESET + " |");
+                    System.out.println("| " + Colors.WHITE_BOLD_BRIGHT + k + ": " + Colors.ANSI_GREEN + v + Colors.ANSI_RESET + " |");
                 });
-        System.out.println(Constants.ANSI_CYAN + MessageFormatterService.surroundMessage("-","Pilacoins found per Thread") + Constants.ANSI_RESET);
+        System.out.println(Colors.ANSI_CYAN + MessageFormatterService.surroundMessage("-","Pilacoins found per Thread") + Colors.ANSI_RESET);
         pilaCoinsFoundPerThread.entrySet().stream()
                 .sorted((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()))
                 .forEach(entry -> {
                     String k = entry.getKey();
                     Integer v = entry.getValue();
-                    System.out.println("| " + Constants.WHITE_BOLD_BRIGHT + k + ": " + Constants.ANSI_GREEN + v + Constants.ANSI_RESET + " |");
+                    System.out.println("| " + Colors.WHITE_BOLD_BRIGHT + k + ": " + Colors.ANSI_GREEN + v + Colors.ANSI_RESET + " |");
                 });
         System.out.println("\n");
     }

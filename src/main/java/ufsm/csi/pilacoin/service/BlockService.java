@@ -7,7 +7,7 @@ import lombok.SneakyThrows;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
-import ufsm.csi.pilacoin.Constants;
+import ufsm.csi.pilacoin.constants.AppInfo;
 import ufsm.csi.pilacoin.model.Block;
 import ufsm.csi.pilacoin.model.BlockObservable;
 import ufsm.csi.pilacoin.model.BlockObserver;
@@ -55,7 +55,7 @@ public class BlockService implements BlockObservable {
     public void findBlocks(@Payload String blockStr) {
         this.currentBlock = this.objectReader.readValue(blockStr, Block.class);
         if(!this.miningThreadsStarted) {
-            this.startBlockMiningThreads(Constants.MINING_THREADS_NUMBER);
+            this.startBlockMiningThreads(AppInfo.MINING_THREADS_NUMBER);
             this.miningThreadsStarted = true;
         }
     }
@@ -71,7 +71,7 @@ public class BlockService implements BlockObservable {
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
             byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
             BlocoValidado blocoValidado = BlocoValidado.builder()
-                    .nomeValidador("Luiz Felipe")
+                    .nomeValidador(AppInfo.DEFAULT_NAME)
                     .bloco(block)
                     .assinaturaBloco(encryptCipher.doFinal(hashByteArr))
                     .chavePublicaValidador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))

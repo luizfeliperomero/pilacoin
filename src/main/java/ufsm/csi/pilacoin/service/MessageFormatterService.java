@@ -1,6 +1,6 @@
 package ufsm.csi.pilacoin.service;
 
-import ufsm.csi.pilacoin.Constants;
+import ufsm.csi.pilacoin.constants.Colors;
 
 public class MessageFormatterService {
     public static String surroundMessage(String surround, String message) {
@@ -9,7 +9,7 @@ public class MessageFormatterService {
     }
 
     public static String threadIdentifierMessage(Thread thread) {
-        return Constants.YELLOW_BOLD_BRIGHT + thread.getName() + Constants.ANSI_RESET  + ": ";
+        return Colors.YELLOW_BOLD_BRIGHT + thread.getName() + Colors.ANSI_RESET  + ": ";
     }
 
     public static String formattedTimeMessage(Long hours, Long minutes, Long seconds) {
