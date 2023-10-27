@@ -3,20 +3,17 @@ package ufsm.csi.pilacoin.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ufsm.csi.pilacoin.Constants;
+import ufsm.csi.pilacoin.constants.AppInfo;
+import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.model.DifficultyObserver;
 import ufsm.csi.pilacoin.model.PilaCoin;
 import ufsm.csi.pilacoin.shared.SharedResources;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 @Service
@@ -40,7 +37,7 @@ public class MiningService implements Runnable, DifficultyObserver {
         String json = "";
         PilaCoin pilaCoin = PilaCoin.builder()
                 .chaveCriador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
-                .nomeCriador("Luiz Felipe")
+                .nomeCriador(AppInfo.DEFAULT_NAME)
                 .build();
         int count = 0;
         Random random = new Random();
@@ -58,7 +55,7 @@ public class MiningService implements Runnable, DifficultyObserver {
                 this.rabbitService.send("pila-minerado", json);
                 this.sharedResources.updatePilaCoinsFoundPerDifficulty(this.difficulty);
                 this.sharedResources.updatePilaCoinsFoundPerThread(Thread.currentThread().getName());
-                System.out.printf( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Constants.BLACK_BACKGROUND + "Pilacoin found in " + Constants.WHITE_BOLD_BRIGHT + "%,d" + " tries" + Constants.ANSI_RESET + "\n", count);
+                System.out.printf( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Colors.BLACK_BACKGROUND + "Pilacoin found in " + Colors.WHITE_BOLD_BRIGHT + "%,d" + " tries" + Colors.ANSI_RESET + "\n", count);
                 System.out.println(json);
                 count = 0;
             }

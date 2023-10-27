@@ -5,7 +5,8 @@ import lombok.SneakyThrows;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
-import ufsm.csi.pilacoin.Constants;
+import ufsm.csi.pilacoin.constants.AppInfo;
+import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.model.Difficulty;
 import ufsm.csi.pilacoin.model.DifficultyObservable;
 import ufsm.csi.pilacoin.model.DifficultyObserver;
@@ -53,7 +54,7 @@ public class DifficultyService implements DifficultyObservable {
         if(this.miningPeriodHours < 0) {
             this.miningPeriodSeconds = 0L;
         }
-        System.out.println(Constants.ANSI_PURPLE + "Mining Time: " + Constants.ANSI_RESET + Constants.WHITE_BOLD_BRIGHT + MessageFormatterService.formattedTimeMessage(this.miningPeriodHours, this.miningPeriodMinutes, this.miningPeriodSeconds) + Constants.ANSI_RESET);
+        System.out.println(Colors.ANSI_PURPLE + "Mining Time: " + Colors.ANSI_RESET + Colors.WHITE_BOLD_BRIGHT + MessageFormatterService.formattedTimeMessage(this.miningPeriodHours, this.miningPeriodMinutes, this.miningPeriodSeconds) + Colors.ANSI_RESET);
     });
     {
         Runtime.getRuntime().addShutdownHook(shutdownThread);
@@ -71,15 +72,15 @@ public class DifficultyService implements DifficultyObservable {
         Difficulty dif = objectMapper.readValue(difJson, Difficulty.class);
         setCurrentDifficulty(new BigInteger(dif.getDificuldade(), 16));
         if(!currentDifficulty.equals(this.prevDifficulty) && !isFirstDifficulty) {
-            System.out.println(Constants.ANSI_CYAN + MessageFormatterService.surroundMessage("-", "Difficulty Changed: " + currentDifficulty) + Constants.ANSI_RESET);
+            System.out.println(Colors.ANSI_CYAN + MessageFormatterService.surroundMessage("-", "Difficulty Changed: " + currentDifficulty) + Colors.ANSI_RESET);
         }
         if(isFirstDifficulty) {
-            System.out.println(Constants.ANSI_YELLOW + MessageFormatterService.surroundMessage("-", "Difficulty Received: " + currentDifficulty) + Constants.ANSI_RESET);
+            System.out.println(Colors.ANSI_YELLOW + MessageFormatterService.surroundMessage("-", "Difficulty Received: " + currentDifficulty) + Colors.ANSI_RESET);
             isFirstDifficulty = false;
         }
         prevDifficulty = currentDifficulty;
         if(!threadsAlreadyStarted) {
-            this.startMiningThreads(Constants.MINING_THREADS_NUMBER);
+            this.startMiningThreads(AppInfo.MINING_THREADS_NUMBER);
             this.threadsAlreadyStarted = true;
         }
     }

@@ -10,8 +10,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
-import ufsm.csi.pilacoin.Constants;
-import ufsm.csi.pilacoin.model.Block;
+import ufsm.csi.pilacoin.constants.AppInfo;
+import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.model.DifficultyObserver;
 import ufsm.csi.pilacoin.model.PilaCoin;
 import ufsm.csi.pilacoin.model.PilaValidado;
@@ -47,12 +47,12 @@ public class RabbitService implements DifficultyObserver {
         PilaCoin pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
         hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
 
-        if(this.difficulty != null && pilaCoin.getNomeCriador().equals("Luiz Felipe") && (hash.compareTo(this.difficulty) < 0)) {
+        if(this.difficulty != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
             Cipher encryptCipher = Cipher.getInstance("RSA");
             encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
             byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
             PilaValidado pilaValidado = PilaValidado.builder()
-                    .nomeValidador("Luiz Felipe")
+                    .nomeValidador(AppInfo.DEFAULT_NAME)
                     .chavePublicaValidador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
                     .assinaturaPilaCoin(encryptCipher.doFinal(hashByteArr))
                     .pilaCoin(pilaCoin)
@@ -66,8 +66,8 @@ public class RabbitService implements DifficultyObserver {
     @RabbitListener(queues = {"luiz_felipe"})
     public void rabbitResponse(@Payload Message message) {
         String responseMessage = new String(message.getBody());
-        String outputColor = responseMessage.contains("erro") ? Constants.ANSI_RED : Constants.ANSI_GREEN;
-        System.out.println(outputColor + responseMessage + Constants.ANSI_RESET);
+        String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
+        System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
     }
 
 
