@@ -42,24 +42,27 @@ public class RabbitService implements DifficultyObserver {
     @SneakyThrows
     @RabbitListener(queues = {"pila-minerado"})
     public void validatePila(@Payload String pilaCoinStr) {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        BigInteger hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
-        PilaCoin pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
-        hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
+        if(!pilaCoinStr.isEmpty()) {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            BigInteger hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
+            PilaCoin pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
+            hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
 
-        if(this.difficulty != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
-            Cipher encryptCipher = Cipher.getInstance("RSA");
-            encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
-            byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
-            PilaValidado pilaValidado = PilaValidado.builder()
-                    .nomeValidador(AppInfo.DEFAULT_NAME)
-                    .chavePublicaValidador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
-                    .assinaturaPilaCoin(encryptCipher.doFinal(hashByteArr))
-                    .pilaCoin(pilaCoin)
-                    .build();
-            String json = this.objectWriter.writeValueAsString(pilaValidado);
-            this.send("pila-validado", json);
-        } else this.send("pila-minerado", pilaCoinStr);
+            if (this.difficulty != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
+                Cipher encryptCipher = Cipher.getInstance("RSA");
+                encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
+                byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
+                PilaValidado pilaValidado = PilaValidado.builder()
+                        .nomeValidador(AppInfo.DEFAULT_NAME)
+                        .chavePublicaValidador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
+                        .assinaturaPilaCoin(encryptCipher.doFinal(hashByteArr))
+                        .pilaCoin(pilaCoin)
+                        .build();
+                System.out.println(Colors.WHITE_BOLD_BRIGHT + pilaValidado.getPilaCoin().getNomeCriador() + "'s " + Colors.ANSI_CYAN + "Pila valid!" + Colors.ANSI_RESET);
+                String json = this.objectWriter.writeValueAsString(pilaValidado);
+                this.send("pila-validado", json);
+            } else this.send("pila-minerado", pilaCoinStr);
+        }
     }
 
 

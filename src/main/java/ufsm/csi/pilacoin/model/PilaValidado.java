@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonPropertyOrder({"nomeValidador", "chavePublicaValidador", "assinaturaPilaCoin", "pilaCoin"})
+@Data
+@JsonPropertyOrder(alphabetic = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PilaValidado {
     private String nomeValidador;
