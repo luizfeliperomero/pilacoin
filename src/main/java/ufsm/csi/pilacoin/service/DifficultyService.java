@@ -25,6 +25,7 @@ public class DifficultyService implements DifficultyObservable {
     private boolean threadsAlreadyStarted = false;
     private BigInteger currentDifficulty;
     private final SharedResources sharedResources;
+    private final PilaCoinService pilaCoinService;
     private Long miningStartTime;
     private Long miningEndTime;
     private Long miningPeriod;
@@ -60,9 +61,10 @@ public class DifficultyService implements DifficultyObservable {
         Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
-    public DifficultyService(RabbitService rabbitService, SharedResources sharedResources) {
+    public DifficultyService(RabbitService rabbitService, SharedResources sharedResources, PilaCoinService pilaCoinService) {
         this.rabbitService = rabbitService;
         this.sharedResources = sharedResources;
+        this.pilaCoinService = pilaCoinService;
         this.observers.add(this.rabbitService);
     }
     @SneakyThrows
@@ -109,7 +111,7 @@ public class DifficultyService implements DifficultyObservable {
         }
         this.miningStartTime = System.currentTimeMillis();
         IntStream.range(0, threads)
-                .mapToObj(i -> new MiningService(this.rabbitService, sharedResources))
+                .mapToObj(i -> new MiningService(this.rabbitService, pilaCoinService, sharedResources))
                 .peek(miningService -> {
                     this.subscribe(miningService);
                     miningService.update(this.currentDifficulty);

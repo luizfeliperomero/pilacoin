@@ -39,6 +39,7 @@ public class RabbitService implements DifficultyObserver {
         this.rabbitTemplate.convertAndSend(topic, object);
     }
 
+
     @SneakyThrows
     @RabbitListener(queues = {"pila-minerado"})
     public void validatePila(@Payload String pilaCoinStr) {
@@ -65,13 +66,25 @@ public class RabbitService implements DifficultyObserver {
         }
     }
 
-
-    @RabbitListener(queues = {"luiz_felipe"})
+    /*@RabbitListener(queues = {"luiz_felipe"})
     public void rabbitResponse(@Payload Message message) {
         String responseMessage = new String(message.getBody());
         String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
         System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
+    }*/
+
+    /*@RabbitListener(queues = {"luiz_felipe-bloco-validado"})
+    public void rabbitBlockResponse(@Payload Message message) {
+        String responseMessage = new String(message.getBody());
+        String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
+        System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
     }
+    @RabbitListener(queues = {"luiz_felipe-pila-validado"})
+    public void rabbitPilaResponse(@Payload Message message) {
+        String responseMessage = new String(message.getBody());
+        String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
+        System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
+    }*/
 
 
     @Override

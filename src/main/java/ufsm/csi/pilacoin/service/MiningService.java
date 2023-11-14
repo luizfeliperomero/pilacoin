@@ -20,11 +20,13 @@ import java.util.Random;
 public class MiningService implements Runnable, DifficultyObserver {
     private final RabbitService rabbitService;
     private BigInteger difficulty;
+    private final PilaCoinService pilaCoinService;
     private final SharedResources sharedResources;
 
 
-    public MiningService(RabbitService rabbitService, SharedResources sharedResources) {
+    public MiningService(RabbitService rabbitService, PilaCoinService pilaCoinService, SharedResources sharedResources) {
         this.rabbitService = rabbitService;
+        this.pilaCoinService = pilaCoinService;
         this.sharedResources = sharedResources;
     }
 
@@ -57,6 +59,7 @@ public class MiningService implements Runnable, DifficultyObserver {
                 this.sharedResources.updatePilaCoinsFoundPerThread(Thread.currentThread().getName());
                 System.out.printf( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Colors.BLACK_BACKGROUND + "Pilacoin found in " + Colors.WHITE_BOLD_BRIGHT + "%,d" + " tries" + Colors.ANSI_RESET + "\n", count);
                 System.out.println(json);
+                this.pilaCoinService.save(pilaCoin);
                 count = 0;
             }
         }
