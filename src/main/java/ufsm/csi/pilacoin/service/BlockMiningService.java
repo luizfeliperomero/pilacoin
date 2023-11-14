@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
+import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.model.Block;
 import ufsm.csi.pilacoin.model.BlockObserver;
 import ufsm.csi.pilacoin.model.DifficultyObserver;
@@ -49,8 +50,8 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
             json = objectWriter.writeValueAsString(this.block);
             hash = new BigInteger(md.digest(json.getBytes(StandardCharsets.UTF_8))).abs();
             count++;
-            if(hash.compareTo(this.difficulty) < 0) {
-                System.out.println("Found 1 block in " +count + " tries");
+            if(this.difficulty != null && hash.compareTo(this.difficulty) < 0) {
+                System.out.printf( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Colors.BLACK_BACKGROUND + "Block found in " + Colors.WHITE_BOLD_BRIGHT + "%,d" + " tries" + Colors.ANSI_RESET + "\n", count);
                 System.out.println(json);
                 this.rabbitService.send("bloco-minerado", json);
             }

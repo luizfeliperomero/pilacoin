@@ -2,6 +2,8 @@ package ufsm.csi.pilacoin.shared;
 
 import lombok.Data;
 import lombok.SneakyThrows;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Component;
 import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.service.MessageFormatterService;
@@ -69,8 +71,11 @@ public class SharedResources {
         this.pilaCoinsFoundPerThread = pilaCoinsFoundPerThread;
     }
 
-    public synchronized void updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
+    @MessageMapping("/pilacoins_found_per_difficulty")
+    @SendTo("/topic/pilacoins_found_per_difficulty")
+    public synchronized Map<BigInteger, Integer> updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
         pilaCoinsFoundPerDifficulty.merge(difficulty, 1, Integer::sum);
+        return this.pilaCoinsFoundPerDifficulty;
     }
 
     public synchronized void updatePilaCoinsFoundPerThread(String threadName) {

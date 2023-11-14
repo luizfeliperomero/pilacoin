@@ -18,13 +18,14 @@ import javax.crypto.Cipher;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
 @Service
 public class BlockService implements BlockObservable {
     private final ObjectReader objectReader = new ObjectMapper().reader();
-    private List<BlockObserver> observers;
+    private List<BlockObserver> observers = new ArrayList<>();
     private final DifficultyService difficultyService;
     private final RabbitService rabbitService;
     private final SharedResources sharedResources;
