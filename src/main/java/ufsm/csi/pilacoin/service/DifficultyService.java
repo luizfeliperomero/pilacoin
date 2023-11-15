@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.constants.AppInfo;
 import ufsm.csi.pilacoin.constants.Colors;
@@ -87,11 +88,13 @@ public class DifficultyService implements DifficultyObservable {
         }
     }
 
-    public void setCurrentDifficulty(BigInteger difficulty) {
+    @SendTo("/topic/difficulty")
+    public BigInteger setCurrentDifficulty(BigInteger difficulty) {
        this.currentDifficulty = difficulty;
        if(observers.size() != 0) {
            observers.forEach(observer -> observer.update(this.currentDifficulty));
        }
+       return this.currentDifficulty;
     }
 
     @Override

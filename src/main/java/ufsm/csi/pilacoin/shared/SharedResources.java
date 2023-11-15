@@ -2,21 +2,33 @@ package ufsm.csi.pilacoin.shared;
 
 import lombok.Data;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.stomp.*;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.service.MessageFormatterService;
 
+import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
+@Controller
 @Data
 public class SharedResources {
     private Map<BigInteger, Integer> pilaCoinsFoundPerDifficulty = new HashMap<BigInteger, Integer>();
@@ -71,12 +83,12 @@ public class SharedResources {
         this.pilaCoinsFoundPerThread = pilaCoinsFoundPerThread;
     }
 
-    @MessageMapping("/pilacoins_found_per_difficulty")
     @SendTo("/topic/pilacoins_found_per_difficulty")
     public synchronized Map<BigInteger, Integer> updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
         pilaCoinsFoundPerDifficulty.merge(difficulty, 1, Integer::sum);
         return this.pilaCoinsFoundPerDifficulty;
     }
+
 
     public synchronized void updatePilaCoinsFoundPerThread(String threadName) {
         pilaCoinsFoundPerThread.merge(threadName, 1, Integer::sum);
