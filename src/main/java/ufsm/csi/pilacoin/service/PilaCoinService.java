@@ -27,6 +27,7 @@ public class PilaCoinService {
     }
 
     public void save(PilaCoin pilaCoin) {
+        pilaCoin.setId(0l);
         this.pilaCoinRepository.save(pilaCoin);
     }
 

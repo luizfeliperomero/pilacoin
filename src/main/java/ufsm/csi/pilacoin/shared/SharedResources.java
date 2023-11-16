@@ -36,6 +36,8 @@ public class SharedResources {
     private final Object lock = new Object();
     private static volatile SharedResources  instance;
     private final AtomicBoolean alreadyExecutedShutdown = new AtomicBoolean(false);
+    @Autowired
+    public SimpMessagingTemplate template;
     private PublicKey publicKey;
     private PrivateKey privateKey;
     private final Thread shutdownThread = new Thread(() -> {
@@ -83,15 +85,14 @@ public class SharedResources {
         this.pilaCoinsFoundPerThread = pilaCoinsFoundPerThread;
     }
 
-    @SendTo("/topic/pilacoins_found_per_difficulty")
-    public synchronized Map<BigInteger, Integer> updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
+    public synchronized void updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
         pilaCoinsFoundPerDifficulty.merge(difficulty, 1, Integer::sum);
-        return this.pilaCoinsFoundPerDifficulty;
+        this.template.convertAndSend("/topic/pilacoins_found_per_difficulty", this.pilaCoinsFoundPerDifficulty);
     }
-
 
     public synchronized void updatePilaCoinsFoundPerThread(String threadName) {
         pilaCoinsFoundPerThread.merge(threadName, 1, Integer::sum);
+        this.template.convertAndSend("/topic/pilacoins_found_per_thread", this.pilaCoinsFoundPerThread);
     }
 
     private void printMiningData() {

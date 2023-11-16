@@ -82,7 +82,10 @@ public class DifficultyService implements DifficultyObservable {
             isFirstDifficulty = false;
         }
         prevDifficulty = currentDifficulty;
-        if(!threadsAlreadyStarted) {
+    }
+
+    public void startMining() {
+        if(this.currentDifficulty != null && !threadsAlreadyStarted) {
             this.startMiningThreads(AppInfo.MINING_THREADS_NUMBER);
             this.threadsAlreadyStarted = true;
         }
