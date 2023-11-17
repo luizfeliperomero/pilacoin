@@ -30,6 +30,7 @@ public class BlockService implements BlockObservable {
     private final RabbitService rabbitService;
     private final SharedResources sharedResources;
     private final ObjectWriter objectWriter = new ObjectMapper().writer();
+    private List<BlockMiningService> blockMiningServices = new ArrayList<>();
     private Block currentBlock;
     private boolean miningThreadsStarted = false;
 
@@ -39,26 +40,37 @@ public class BlockService implements BlockObservable {
         this.sharedResources = sharedResources;
     }
 
-    public void startBlockMiningThreads(int threads) {
-        IntStream.range(0, threads)
-                .mapToObj(i -> new BlockMiningService(SharedResources.getInstance(), this.rabbitService))
-                .peek(miningService -> {
-                    this.subscribe(miningService);
-                    this.difficultyService.subscribe(miningService);
-                    miningService.update(this.currentBlock);
-                    miningService.update(this.difficultyService.getCurrentDifficulty());
-                })
-                .forEach(miningService -> new Thread(miningService).start());
+    public void stopBlockMiningThreads() {
+        this.blockMiningServices.forEach(BlockMiningService::stopMining);
+        this.miningThreadsStarted = false;
+    }
+
+    @SneakyThrows
+    public void startBlockMiningThreads() {
+        if(!this.miningThreadsStarted) {
+            this.sharedResources.getDifficultyLatch().await();
+            IntStream.range(0, AppInfo.MINING_THREADS_NUMBER)
+                    .mapToObj(i -> {
+                        BlockMiningService bms = new BlockMiningService(SharedResources.getInstance(), this.rabbitService);
+                        this.blockMiningServices.add(bms);
+                        return bms;
+                    }
+                    )
+                    .peek(miningService -> {
+                        this.subscribe(miningService);
+                        this.difficultyService.subscribe(miningService);
+                        miningService.update(this.currentBlock);
+                        miningService.update(this.difficultyService.getCurrentDifficulty());
+                    })
+                    .forEach(miningService -> new Thread(miningService).start());
+            this.miningThreadsStarted = true;
+        }
     }
 
     @SneakyThrows
     @RabbitListener(queues = {"descobre-bloco"})
     public void findBlocks(@Payload String blockStr) {
         this.currentBlock = this.objectReader.readValue(blockStr, Block.class);
-        if(!this.miningThreadsStarted) {
-            this.startBlockMiningThreads(AppInfo.MINING_THREADS_NUMBER);
-            this.miningThreadsStarted = true;
-        }
     }
 
     @SneakyThrows

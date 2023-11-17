@@ -8,6 +8,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -25,6 +26,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
@@ -33,13 +35,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class SharedResources {
     private Map<BigInteger, Integer> pilaCoinsFoundPerDifficulty = new HashMap<BigInteger, Integer>();
     private Map<String, Integer> pilaCoinsFoundPerThread = new HashMap<String, Integer>();
+    private Map<BigInteger, Integer> blocksFoundPerDifficulty = new HashMap<BigInteger, Integer>();
+    private Map<String, Integer> blocksFoundPerThread = new HashMap<String, Integer>();
+    private int blocksFound = 0;
     private final Object lock = new Object();
     private static volatile SharedResources  instance;
     private final AtomicBoolean alreadyExecutedShutdown = new AtomicBoolean(false);
     @Autowired
     public SimpMessagingTemplate template;
+    public int pilacoinsFound = 0;
     private PublicKey publicKey;
     private PrivateKey privateKey;
+    private boolean firstPilacoinsTotalSent = false;
+    private boolean firstPilacoinsFoundPerDifficultySent = false;
+    private boolean firstPilacoinsFoundPerThreadSent = false;
+    private final CountDownLatch difficultyLatch = new CountDownLatch(1);
     private final Thread shutdownThread = new Thread(() -> {
         synchronized (lock) {
             if (this.alreadyExecutedShutdown.compareAndSet(false, true)) {
@@ -85,14 +95,45 @@ public class SharedResources {
         this.pilaCoinsFoundPerThread = pilaCoinsFoundPerThread;
     }
 
+    @Scheduled(fixedRate = 5000)
+    public void sendPilacoinsFoundPerDifficulty() {
+        if(!this.pilaCoinsFoundPerDifficulty.isEmpty()) {
+            var thread_name = Thread.currentThread().getName();
+            this.template.convertAndSend("/topic/pilacoins_found_per_difficulty", this.pilaCoinsFoundPerDifficulty);
+        }
+    }
+
+    @Scheduled(fixedRate = 5000)
+    public void sendPilacoinsFoundPerThread() {
+        if(!this.pilaCoinsFoundPerThread.isEmpty()) {
+            this.template.convertAndSend("/topic/pilacoins_found_per_thread", this.pilaCoinsFoundPerThread);
+        }
+    }
+
+    @Scheduled(fixedRate = 5000)
+    public void sendPilacoinsTotal() {
+        this.template.convertAndSend("/topic/total_pilacoins", this.pilacoinsFound);
+    }
+
     public synchronized void updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
+        this.pilacoinsFound++;
+        if(!this.firstPilacoinsTotalSent) {
+            this.sendPilacoinsTotal();
+            this.firstPilacoinsTotalSent = true;
+        }
         pilaCoinsFoundPerDifficulty.merge(difficulty, 1, Integer::sum);
-        this.template.convertAndSend("/topic/pilacoins_found_per_difficulty", this.pilaCoinsFoundPerDifficulty);
+        if(!this.firstPilacoinsFoundPerDifficultySent) {
+            this.sendPilacoinsFoundPerDifficulty();
+            this.firstPilacoinsFoundPerDifficultySent = true;
+        }
     }
 
     public synchronized void updatePilaCoinsFoundPerThread(String threadName) {
         pilaCoinsFoundPerThread.merge(threadName, 1, Integer::sum);
-        this.template.convertAndSend("/topic/pilacoins_found_per_thread", this.pilaCoinsFoundPerThread);
+        if(!this.firstPilacoinsFoundPerThreadSent) {
+            this.sendPilacoinsFoundPerThread();
+            this.firstPilacoinsFoundPerThreadSent = true;
+        }
     }
 
     private void printMiningData() {

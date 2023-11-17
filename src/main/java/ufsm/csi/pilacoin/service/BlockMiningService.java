@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
+import ufsm.csi.pilacoin.constants.AppInfo;
 import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.model.Block;
 import ufsm.csi.pilacoin.model.BlockObserver;
@@ -22,6 +23,7 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
     private final SharedResources sharedResources;
     private BigInteger difficulty;
     private final RabbitService rabbitService;
+    private boolean stopMining = false;
 
     public BlockMiningService(SharedResources sharedResources, RabbitService rabbitService) {
         this.sharedResources = sharedResources;
@@ -43,7 +45,8 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
         int count = 0;
         Random random = new Random();
         this.block.setChaveUsuarioMinerador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8));
-        while (true) {
+        this.block.setNomeUsuarioMinerador(AppInfo.DEFAULT_NAME);
+        while (!this.stopMining) {
             byte[] byteArray = new byte[256 / 8];
             random.nextBytes(byteArray);
             this.block.setNonce(new BigInteger(md.digest(byteArray)).abs());
@@ -56,6 +59,11 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
                 this.rabbitService.send("bloco-minerado", json);
             }
         }
+        Thread.currentThread().interrupt();
+    }
+
+    public void stopMining() {
+        this.stopMining = true;
     }
 
     @Override

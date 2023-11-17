@@ -22,6 +22,7 @@ public class MiningService implements Runnable, DifficultyObserver {
     private BigInteger difficulty;
     private final PilaCoinService pilaCoinService;
     private final SharedResources sharedResources;
+    private volatile boolean stopMining = false;
 
 
     public MiningService(RabbitService rabbitService, PilaCoinService pilaCoinService, SharedResources sharedResources) {
@@ -30,6 +31,9 @@ public class MiningService implements Runnable, DifficultyObserver {
         this.sharedResources = sharedResources;
     }
 
+    public void stopMining() {
+       this.stopMining = true;
+    }
 
     @Override
     @SneakyThrows
@@ -45,7 +49,7 @@ public class MiningService implements Runnable, DifficultyObserver {
         Random random = new Random();
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-        while(true) {
+        while(!stopMining) {
             byte[] byteArray = new byte[256 / 8];
             random.nextBytes(byteArray);
             pilaCoin.setNonce(new BigInteger(md.digest(byteArray)).abs().toString());
@@ -63,6 +67,7 @@ public class MiningService implements Runnable, DifficultyObserver {
                 count = 0;
             }
         }
+        Thread.currentThread().interrupt();
     }
 
     @Override

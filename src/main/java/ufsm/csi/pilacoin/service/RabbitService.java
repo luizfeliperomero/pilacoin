@@ -46,10 +46,11 @@ public class RabbitService implements DifficultyObserver {
         if(!pilaCoinStr.isEmpty()) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             BigInteger hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
-            PilaCoin pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
-            hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
-
-            if (this.difficulty != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
+            PilaCoin pilaCoin = null;
+            try {
+                pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
+            } catch(Exception e) {}
+            if (this.difficulty != null &&  pilaCoin != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
                 Cipher encryptCipher = Cipher.getInstance("RSA");
                 encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
                 byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
@@ -71,15 +72,15 @@ public class RabbitService implements DifficultyObserver {
         String responseMessage = new String(message.getBody());
         String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
         System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
-    }*/
+    }
 
-    /*@RabbitListener(queues = {"luiz_felipe-bloco-validado"})
+    @RabbitListener(queues = {"Luiz Felipe-bloco-validado"})
     public void rabbitBlockResponse(@Payload Message message) {
         String responseMessage = new String(message.getBody());
         String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
         System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
     }
-    @RabbitListener(queues = {"luiz_felipe-pila-validado"})
+    @RabbitListener(queues = {"Luiz Felipe-pila-validado"})
     public void rabbitPilaResponse(@Payload Message message) {
         String responseMessage = new String(message.getBody());
         String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
