@@ -11,11 +11,16 @@ import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.model.Difficulty;
 import ufsm.csi.pilacoin.model.DifficultyObservable;
 import ufsm.csi.pilacoin.model.DifficultyObserver;
+import ufsm.csi.pilacoin.model.PilacoinMiningData;
 import ufsm.csi.pilacoin.shared.SharedResources;
 
 import java.math.BigInteger;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 @Service
@@ -35,11 +40,12 @@ public class DifficultyService implements DifficultyObservable {
     private Long miningPeriodSeconds;
     private BigInteger prevDifficulty;
     private boolean isFirstDifficulty = true;
+    private Date miningDate;
     private List<MiningService> pilacoinMiningServices = new ArrayList<>();
     private List<DifficultyObserver> observers = new ArrayList<>();
-
+    private final PilacoinMiningDataService pilacoinMiningDataService;
+    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
     private final Thread shutdownThread = new Thread(() -> {
-        this.miningEndTime = System.currentTimeMillis();
         this.miningPeriod = this.miningEndTime - this.miningStartTime;
         this.miningPeriodSeconds = this.miningPeriod / 1000;
         this.miningPeriodMinutes = this.miningPeriodSeconds / 60;
@@ -63,10 +69,11 @@ public class DifficultyService implements DifficultyObservable {
         Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
-    public DifficultyService(RabbitService rabbitService, SharedResources sharedResources, PilaCoinService pilaCoinService) {
+    public DifficultyService(RabbitService rabbitService, SharedResources sharedResources, PilaCoinService pilaCoinService, PilacoinMiningDataService pilacoinMiningDataService) {
         this.rabbitService = rabbitService;
         this.sharedResources = sharedResources;
         this.pilaCoinService = pilaCoinService;
+        this.pilacoinMiningDataService = pilacoinMiningDataService;
         this.observers.add(this.rabbitService);
     }
     @SneakyThrows
@@ -115,6 +122,21 @@ public class DifficultyService implements DifficultyObservable {
     }
 
     public void stopMining() {
+        this.miningEndTime = System.currentTimeMillis();
+        long duration = Math.abs(this.miningStartTime - this.miningEndTime);
+        String timeElapsed = String.format("%02d h, %02d min, %02d sec",
+                TimeUnit.MILLISECONDS.toHours(duration),
+                TimeUnit.MILLISECONDS.toMinutes(duration),
+                TimeUnit.MILLISECONDS.toSeconds(duration)
+                ) ;
+        PilacoinMiningData pilacoinMiningData = PilacoinMiningData.builder()
+                .pilacoins_mined(this.sharedResources.pilacoinsFound)
+                .pilacoinsFoundPerDifficulty(this.sharedResources.getPilaCoinsFoundPerDifficulty())
+                .pilacoinsFoundPerThread(this.sharedResources.getPilaCoinsFoundPerThread())
+                .timeElapsed(timeElapsed)
+                .date(this.miningDate)
+                .build();
+       this.pilacoinMiningDataService.save(pilacoinMiningData);
        this.pilacoinMiningServices.forEach(MiningService::stopMining);
        this.pilacoinMiningServices.clear();
        this.sharedResources.getPilaCoinsFoundPerDifficulty().clear();
@@ -127,6 +149,7 @@ public class DifficultyService implements DifficultyObservable {
     }
 
     public void startMiningThreads(int threads) {
+        this.miningDate = new Date(System.currentTimeMillis());
         if(!firstPilaSent) {
             this.rabbitService.send("pila-minerado", "");
             this.firstPilaSent = true;

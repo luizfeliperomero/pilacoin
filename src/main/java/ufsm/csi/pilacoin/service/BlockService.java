@@ -12,6 +12,7 @@ import ufsm.csi.pilacoin.model.Block;
 import ufsm.csi.pilacoin.model.BlockObservable;
 import ufsm.csi.pilacoin.model.BlockObserver;
 import ufsm.csi.pilacoin.model.BlocoValidado;
+import ufsm.csi.pilacoin.repository.BlockRepository;
 import ufsm.csi.pilacoin.shared.SharedResources;
 
 import javax.crypto.Cipher;
@@ -31,18 +32,24 @@ public class BlockService implements BlockObservable {
     private final SharedResources sharedResources;
     private final ObjectWriter objectWriter = new ObjectMapper().writer();
     private List<BlockMiningService> blockMiningServices = new ArrayList<>();
+    private final BlockRepository blockRepository;
     private Block currentBlock;
     private boolean miningThreadsStarted = false;
 
-    public BlockService(DifficultyService difficultyService, RabbitService rabbitService, SharedResources sharedResources) {
+    public BlockService(DifficultyService difficultyService, RabbitService rabbitService, SharedResources sharedResources, BlockRepository blockRepository) {
         this.difficultyService = difficultyService;
         this.rabbitService = rabbitService;
         this.sharedResources = sharedResources;
+        this.blockRepository = blockRepository;
     }
 
     public void stopBlockMiningThreads() {
         this.blockMiningServices.forEach(BlockMiningService::stopMining);
         this.miningThreadsStarted = false;
+    }
+
+    public List<Block> getBlocks() {
+       return this.blockRepository.findAll();
     }
 
     @SneakyThrows
@@ -51,7 +58,7 @@ public class BlockService implements BlockObservable {
             this.sharedResources.getDifficultyLatch().await();
             IntStream.range(0, AppInfo.MINING_THREADS_NUMBER)
                     .mapToObj(i -> {
-                        BlockMiningService bms = new BlockMiningService(SharedResources.getInstance(), this.rabbitService);
+                        BlockMiningService bms = new BlockMiningService(SharedResources.getInstance(), this.rabbitService, this.blockRepository);
                         this.blockMiningServices.add(bms);
                         return bms;
                     }

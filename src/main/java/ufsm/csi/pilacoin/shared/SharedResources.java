@@ -95,22 +95,21 @@ public class SharedResources {
         this.pilaCoinsFoundPerThread = pilaCoinsFoundPerThread;
     }
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 4000)
     public void sendPilacoinsFoundPerDifficulty() {
         if(!this.pilaCoinsFoundPerDifficulty.isEmpty()) {
-            var thread_name = Thread.currentThread().getName();
             this.template.convertAndSend("/topic/pilacoins_found_per_difficulty", this.pilaCoinsFoundPerDifficulty);
         }
     }
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 4000)
     public void sendPilacoinsFoundPerThread() {
         if(!this.pilaCoinsFoundPerThread.isEmpty()) {
             this.template.convertAndSend("/topic/pilacoins_found_per_thread", this.pilaCoinsFoundPerThread);
         }
     }
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 4000)
     public void sendPilacoinsTotal() {
         this.template.convertAndSend("/topic/total_pilacoins", this.pilacoinsFound);
     }

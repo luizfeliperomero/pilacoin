@@ -5,7 +5,10 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ufsm.csi.pilacoin.model.Block;
 import ufsm.csi.pilacoin.service.BlockService;
+
+import java.util.List;
 
 @RestController
 @CrossOrigin("*")
@@ -27,6 +30,11 @@ public class BlockController {
     public ResponseEntity stopMining() {
         this.blockService.stopBlockMiningThreads();
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/getAll")
+    public List<Block> findALl() {
+       return this.blockService.getBlocks();
     }
 
 }
