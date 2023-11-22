@@ -1,10 +1,9 @@
 package ufsm.csi.pilacoin.controller;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ufsm.csi.pilacoin.model.PilaCoin;
 import ufsm.csi.pilacoin.service.DifficultyService;
 import ufsm.csi.pilacoin.service.PilaCoinService;
 
@@ -37,6 +36,12 @@ public class PilaCoinController {
     public ResponseEntity stopMining() {
         this.difficultyService.stopMining();
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/paginationAndSort/{offset}/{pageSize}/{field}")
+    public ResponseEntity<Page<PilaCoin>> getPilaCoinsWithPaginationAndSort(@PathVariable int offset, @PathVariable int pageSize, @PathVariable String field) {
+        Page<PilaCoin> pilaCoins = this.pilaCoinService.findPilaCoinsWithPaginationAndSorting(offset, pageSize, field);
+        return ResponseEntity.ok(pilaCoins);
     }
 
 }

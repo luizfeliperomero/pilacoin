@@ -1,9 +1,8 @@
 package ufsm.csi.pilacoin.controller;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import ufsm.csi.pilacoin.model.PilacoinMiningData;
 import ufsm.csi.pilacoin.service.PilacoinMiningDataService;
 
@@ -19,8 +18,8 @@ public class PilacoinMiningDataController {
         this.pilacoinMiningDataService = pilacoinMiningDataService;
     }
 
-    @GetMapping("/list")
-    public List<PilacoinMiningData> getAll() {
-        return this.pilacoinMiningDataService.getData();
+    @GetMapping("/list/{offset}/{size}/{field}")
+    public ResponseEntity<Page<PilacoinMiningData>> paginationAndSort(@PathVariable int offset, @PathVariable int size, @PathVariable String field) {
+        return ResponseEntity.ok(this.pilacoinMiningDataService.findPilaCoinMiningDataWithPaginationAndSorting(offset, size, field));
     }
 }
