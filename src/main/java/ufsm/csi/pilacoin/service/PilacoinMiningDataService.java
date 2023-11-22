@@ -1,10 +1,11 @@
 package ufsm.csi.pilacoin.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.model.PilacoinMiningData;
 import ufsm.csi.pilacoin.repository.PilaCoinMiningDataRepository;
-
-import java.util.List;
 
 @Service
 public class PilacoinMiningDataService {
@@ -14,11 +15,11 @@ public class PilacoinMiningDataService {
         this.pilaCoinMiningDataRepository = pilaCoinMiningDataRepository;
     }
 
-    public List<PilacoinMiningData> getData() {
-       return this.pilaCoinMiningDataRepository.findAll();
-    }
-
     public void save(PilacoinMiningData pilacoinMiningData) {
        this.pilaCoinMiningDataRepository.save(pilacoinMiningData) ;
+    }
+
+    public Page<PilacoinMiningData> findPilaCoinMiningDataWithPaginationAndSorting(int offset, int pageSize, String field) {
+        return pilaCoinMiningDataRepository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(field).descending()));
     }
 }
