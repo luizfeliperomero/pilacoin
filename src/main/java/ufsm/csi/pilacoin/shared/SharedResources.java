@@ -8,6 +8,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -17,14 +18,20 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.service.MessageFormatterService;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
@@ -33,13 +40,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class SharedResources {
     private Map<BigInteger, Integer> pilaCoinsFoundPerDifficulty = new HashMap<BigInteger, Integer>();
     private Map<String, Integer> pilaCoinsFoundPerThread = new HashMap<String, Integer>();
+    private Map<BigInteger, Integer> blocksFoundPerDifficulty = new HashMap<BigInteger, Integer>();
+    private Map<String, Integer> blocksFoundPerThread = new HashMap<String, Integer>();
+    private int blocksFound = 0;
     private final Object lock = new Object();
     private static volatile SharedResources  instance;
     private final AtomicBoolean alreadyExecutedShutdown = new AtomicBoolean(false);
     @Autowired
     public SimpMessagingTemplate template;
+    public int pilacoinsFound = 0;
     private PublicKey publicKey;
     private PrivateKey privateKey;
+    private boolean firstPilacoinsTotalSent = false;
+    private boolean firstPilacoinsFoundPerDifficultySent = false;
+    private boolean firstPilacoinsFoundPerThreadSent = false;
+    private final CountDownLatch difficultyLatch = new CountDownLatch(1);
     private final Thread shutdownThread = new Thread(() -> {
         synchronized (lock) {
             if (this.alreadyExecutedShutdown.compareAndSet(false, true)) {
@@ -49,11 +64,9 @@ public class SharedResources {
     });
     @SneakyThrows
     private SharedResources (){
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(1024);
-        this.publicKey = keyPairGenerator.generateKeyPair().getPublic();
-        this.privateKey = keyPairGenerator.generateKeyPair().getPrivate();
+        this.getKeys();
     }
+
     public static SharedResources getInstance() {
         SharedResources result = instance;
         if(result == null) {
@@ -66,9 +79,29 @@ public class SharedResources {
         }
         return result;
     }
+
     {
         Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
+
+    @SneakyThrows
+    public void getKeys() {
+            FileInputStream fosPublic = new FileInputStream("public-key");
+            FileInputStream fosPrivate = new FileInputStream("private-key");
+            byte[] encodedPublic = new byte[fosPublic.available()];
+            byte[] encodedPrivate = new byte[fosPrivate.available()];
+            fosPublic.read(encodedPublic);
+            fosPrivate.read(encodedPrivate);
+            fosPublic.close();
+            fosPrivate.close();
+
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encodedPublic);
+        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedPrivate);
+        this.publicKey = keyFactory.generatePublic(publicKeySpec);
+        this.privateKey = keyFactory.generatePrivate(privateKeySpec);
+    }
+
     public synchronized Map<BigInteger, Integer> getPilaCoinsFoundPerDifficulty() {
         return pilaCoinsFoundPerDifficulty;
     }
@@ -85,14 +118,44 @@ public class SharedResources {
         this.pilaCoinsFoundPerThread = pilaCoinsFoundPerThread;
     }
 
+    //@Scheduled(fixedRate = 4000)
+    public void sendPilacoinsFoundPerDifficulty() {
+        if(!this.pilaCoinsFoundPerDifficulty.isEmpty()) {
+            this.template.convertAndSend("/topic/pilacoins_found_per_difficulty", this.pilaCoinsFoundPerDifficulty);
+        }
+    }
+
+    //@Scheduled(fixedRate = 4000)
+    public void sendPilacoinsFoundPerThread() {
+        if(!this.pilaCoinsFoundPerThread.isEmpty()) {
+            this.template.convertAndSend("/topic/pilacoins_found_per_thread", this.pilaCoinsFoundPerThread);
+        }
+    }
+
+    //@Scheduled(fixedRate = 4000)
+    public void sendPilacoinsTotal() {
+        this.template.convertAndSend("/topic/total_pilacoins", this.pilacoinsFound);
+    }
+
     public synchronized void updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
+        this.pilacoinsFound++;
+        this.sendPilacoinsTotal();
+        if(!this.firstPilacoinsTotalSent) {
+            this.firstPilacoinsTotalSent = true;
+        }
         pilaCoinsFoundPerDifficulty.merge(difficulty, 1, Integer::sum);
-        this.template.convertAndSend("/topic/pilacoins_found_per_difficulty", this.pilaCoinsFoundPerDifficulty);
+        this.sendPilacoinsFoundPerDifficulty();
+        if(!this.firstPilacoinsFoundPerDifficultySent) {
+            this.firstPilacoinsFoundPerDifficultySent = true;
+        }
     }
 
     public synchronized void updatePilaCoinsFoundPerThread(String threadName) {
         pilaCoinsFoundPerThread.merge(threadName, 1, Integer::sum);
-        this.template.convertAndSend("/topic/pilacoins_found_per_thread", this.pilaCoinsFoundPerThread);
+        this.sendPilacoinsFoundPerThread();
+        if(!this.firstPilacoinsFoundPerThreadSent) {
+            this.firstPilacoinsFoundPerThreadSent = true;
+        }
     }
 
     private void printMiningData() {

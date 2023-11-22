@@ -12,6 +12,7 @@ import ufsm.csi.pilacoin.model.Block;
 import ufsm.csi.pilacoin.model.BlockObservable;
 import ufsm.csi.pilacoin.model.BlockObserver;
 import ufsm.csi.pilacoin.model.BlocoValidado;
+import ufsm.csi.pilacoin.repository.BlockRepository;
 import ufsm.csi.pilacoin.shared.SharedResources;
 
 import javax.crypto.Cipher;
@@ -30,35 +31,53 @@ public class BlockService implements BlockObservable {
     private final RabbitService rabbitService;
     private final SharedResources sharedResources;
     private final ObjectWriter objectWriter = new ObjectMapper().writer();
+    private List<BlockMiningService> blockMiningServices = new ArrayList<>();
+    private final BlockRepository blockRepository;
     private Block currentBlock;
     private boolean miningThreadsStarted = false;
 
-    public BlockService(DifficultyService difficultyService, RabbitService rabbitService, SharedResources sharedResources) {
+    public BlockService(DifficultyService difficultyService, RabbitService rabbitService, SharedResources sharedResources, BlockRepository blockRepository) {
         this.difficultyService = difficultyService;
         this.rabbitService = rabbitService;
         this.sharedResources = sharedResources;
+        this.blockRepository = blockRepository;
     }
 
-    public void startBlockMiningThreads(int threads) {
-        IntStream.range(0, threads)
-                .mapToObj(i -> new BlockMiningService(SharedResources.getInstance(), this.rabbitService))
-                .peek(miningService -> {
-                    this.subscribe(miningService);
-                    this.difficultyService.subscribe(miningService);
-                    miningService.update(this.currentBlock);
-                    miningService.update(this.difficultyService.getCurrentDifficulty());
-                })
-                .forEach(miningService -> new Thread(miningService).start());
+    public void stopBlockMiningThreads() {
+        this.blockMiningServices.forEach(BlockMiningService::stopMining);
+        this.miningThreadsStarted = false;
+    }
+
+    public List<Block> getBlocks() {
+       return this.blockRepository.findAll();
+    }
+
+    @SneakyThrows
+    public void startBlockMiningThreads() {
+        if(!this.miningThreadsStarted) {
+            this.sharedResources.getDifficultyLatch().await();
+            IntStream.range(0, AppInfo.MINING_THREADS_NUMBER)
+                    .mapToObj(i -> {
+                        BlockMiningService bms = new BlockMiningService(SharedResources.getInstance(), this.rabbitService, this.blockRepository);
+                        this.blockMiningServices.add(bms);
+                        return bms;
+                    }
+                    )
+                    .peek(miningService -> {
+                        this.subscribe(miningService);
+                        this.difficultyService.subscribe(miningService);
+                        miningService.update(this.currentBlock);
+                        miningService.update(this.difficultyService.getCurrentDifficulty());
+                    })
+                    .forEach(miningService -> new Thread(miningService).start());
+            this.miningThreadsStarted = true;
+        }
     }
 
     @SneakyThrows
     @RabbitListener(queues = {"descobre-bloco"})
     public void findBlocks(@Payload String blockStr) {
         this.currentBlock = this.objectReader.readValue(blockStr, Block.class);
-        if(!this.miningThreadsStarted) {
-            this.startBlockMiningThreads(AppInfo.MINING_THREADS_NUMBER);
-            this.miningThreadsStarted = true;
-        }
     }
 
     @SneakyThrows

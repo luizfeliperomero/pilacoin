@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.constants.AppInfo;
 import ufsm.csi.pilacoin.constants.Colors;
@@ -46,10 +47,11 @@ public class RabbitService implements DifficultyObserver {
         if(!pilaCoinStr.isEmpty()) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             BigInteger hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
-            PilaCoin pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
-            hash = new BigInteger(md.digest(pilaCoinStr.getBytes(StandardCharsets.UTF_8))).abs();
-
-            if (this.difficulty != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
+            PilaCoin pilaCoin = null;
+            try {
+                pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
+            } catch(Exception e) {}
+            if (this.difficulty != null &&  pilaCoin != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
                 Cipher encryptCipher = Cipher.getInstance("RSA");
                 encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
                 byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
@@ -66,25 +68,18 @@ public class RabbitService implements DifficultyObserver {
         }
     }
 
-    /*@RabbitListener(queues = {"luiz_felipe"})
+    @RabbitListener(queues = {"Luiz Felipe-query"})
+    public void query(@Payload String query) {
+
+    }
+
+
+    @RabbitListener(queues = {"luiz_felipe"})
     public void rabbitResponse(@Payload Message message) {
         String responseMessage = new String(message.getBody());
         String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
         System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
-    }*/
-
-    /*@RabbitListener(queues = {"luiz_felipe-bloco-validado"})
-    public void rabbitBlockResponse(@Payload Message message) {
-        String responseMessage = new String(message.getBody());
-        String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
-        System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
     }
-    @RabbitListener(queues = {"luiz_felipe-pila-validado"})
-    public void rabbitPilaResponse(@Payload Message message) {
-        String responseMessage = new String(message.getBody());
-        String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
-        System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
-    }*/
 
 
     @Override
