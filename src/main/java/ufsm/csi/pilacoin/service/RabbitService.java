@@ -13,9 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.constants.AppInfo;
 import ufsm.csi.pilacoin.constants.Colors;
-import ufsm.csi.pilacoin.model.DifficultyObserver;
-import ufsm.csi.pilacoin.model.PilaCoin;
-import ufsm.csi.pilacoin.model.PilaValidado;
+import ufsm.csi.pilacoin.model.*;
 import ufsm.csi.pilacoin.shared.SharedResources;
 
 import javax.crypto.Cipher;
@@ -69,17 +67,26 @@ public class RabbitService implements DifficultyObserver {
     }
 
     @RabbitListener(queues = {"Luiz Felipe-query"})
-    public void query(@Payload String query) {
-
+    public void query(@Payload QueryResponse query) {
     }
 
+    @SneakyThrows
+    public void sendQuery(QueryRequest query) {
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        query.setIdQuery(1l);
+        query.setTipoQuery(QueryType.USUARIOS);
+        String queryJson = ow.writeValueAsString(query);
+        this.send("query", queryJson);
+    }
+
+    /*
 
     @RabbitListener(queues = {"luiz_felipe"})
     public void rabbitResponse(@Payload Message message) {
         String responseMessage = new String(message.getBody());
         String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
         System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
-    }
+    }*/
 
 
     @Override

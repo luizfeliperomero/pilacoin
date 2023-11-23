@@ -22,6 +22,7 @@ public class Block {
     @Column(precision = 38, scale = 0)
     private Long blockId;
     private Long numeroBloco;
+    private boolean minerado;
     private BigInteger nonce;
     private BigInteger nonceBlocoAnterior;
     private byte[] chaveUsuarioMinerador;

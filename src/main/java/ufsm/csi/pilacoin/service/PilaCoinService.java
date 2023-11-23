@@ -38,6 +38,8 @@ public class PilaCoinService {
         return pilaCoinRepository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(field).descending()));
     }
 
+
+
     public List<PilaCoin> getPilaCoins() {
         return this.pilaCoinRepository.findAll();
     }
