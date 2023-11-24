@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Controller
 @Data
 public class SharedResources {
-    private Map<BigInteger, Integer> pilaCoinsFoundPerDifficulty = new HashMap<BigInteger, Integer>();
+    private Map<String, Integer> pilaCoinsFoundPerDifficulty = new HashMap<String, Integer>();
     private Map<String, Integer> pilaCoinsFoundPerThread = new HashMap<String, Integer>();
     private Map<BigInteger, Integer> blocksFoundPerDifficulty = new HashMap<BigInteger, Integer>();
     private Map<String, Integer> blocksFoundPerThread = new HashMap<String, Integer>();
@@ -86,8 +86,9 @@ public class SharedResources {
 
     @SneakyThrows
     public void getKeys() {
-            FileInputStream fosPublic = new FileInputStream("public-key");
-            FileInputStream fosPrivate = new FileInputStream("private-key");
+        try {
+            FileInputStream fosPublic = new FileInputStream("/usr/local/lib/public-key");
+            FileInputStream fosPrivate = new FileInputStream("/usr/local/lib/private-key");
             byte[] encodedPublic = new byte[fosPublic.available()];
             byte[] encodedPrivate = new byte[fosPrivate.available()];
             fosPublic.read(encodedPublic);
@@ -96,17 +97,20 @@ public class SharedResources {
             fosPrivate.close();
 
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encodedPublic);
-        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedPrivate);
-        this.publicKey = keyFactory.generatePublic(publicKeySpec);
-        this.privateKey = keyFactory.generatePrivate(privateKeySpec);
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encodedPublic);
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedPrivate);
+            this.publicKey = keyFactory.generatePublic(publicKeySpec);
+            this.privateKey = keyFactory.generatePrivate(privateKeySpec);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public synchronized Map<BigInteger, Integer> getPilaCoinsFoundPerDifficulty() {
+    public synchronized Map<String, Integer> getPilaCoinsFoundPerDifficulty() {
         return pilaCoinsFoundPerDifficulty;
     }
 
-    public synchronized void setPilaCoinsFoundPerDifficulty(Map<BigInteger, Integer> pilaCoinsFoundPerDifficulty) {
+    public synchronized void setPilaCoinsFoundPerDifficulty(Map<String, Integer> pilaCoinsFoundPerDifficulty) {
         this.pilaCoinsFoundPerDifficulty = pilaCoinsFoundPerDifficulty;
     }
 
@@ -143,7 +147,7 @@ public class SharedResources {
         if(!this.firstPilacoinsTotalSent) {
             this.firstPilacoinsTotalSent = true;
         }
-        pilaCoinsFoundPerDifficulty.merge(difficulty, 1, Integer::sum);
+        pilaCoinsFoundPerDifficulty.merge(difficulty.toString(), 1, Integer::sum);
         this.sendPilacoinsFoundPerDifficulty();
         if(!this.firstPilacoinsFoundPerDifficultySent) {
             this.firstPilacoinsFoundPerDifficultySent = true;
@@ -165,7 +169,7 @@ public class SharedResources {
         pilaCoinsFoundPerDifficulty.entrySet().stream()
                 .sorted((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()))
                 .forEach(entry -> {
-                    BigInteger k = entry.getKey();
+                    String k = entry.getKey();
                     Integer v = entry.getValue();
                     System.out.println("| " + Colors.WHITE_BOLD_BRIGHT + k + ": " + Colors.ANSI_GREEN + v + Colors.ANSI_RESET + " |");
                 });

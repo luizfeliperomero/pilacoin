@@ -8,6 +8,7 @@
 		<version>3.1.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+	<packaging>jar</packaging>
 	<groupId>ufsm.csi</groupId>
 	<artifactId>pilacoin</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -60,6 +61,7 @@
 		</dependency>
 	</dependencies>
 	<build>
+		<finalName>pilacoin-server</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
