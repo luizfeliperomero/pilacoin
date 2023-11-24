@@ -4,12 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.SneakyThrows;
-import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.constants.AppInfo;
 import ufsm.csi.pilacoin.constants.Colors;
@@ -20,6 +18,7 @@ import javax.crypto.Cipher;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.List;
 
 @Service
 public class RabbitService implements DifficultyObserver {
@@ -28,10 +27,15 @@ public class RabbitService implements DifficultyObserver {
     private final ObjectReader objectReader = new ObjectMapper().reader();
     private final ObjectWriter objectWriter = new ObjectMapper().writer();
     private final SharedResources sharedResources;
+    private final UserService userService;
+    private final PilaCoinService pilaCoinService;
     private BigInteger difficulty;
 
-    public RabbitService(SharedResources sharedResources) {
+    public RabbitService(RabbitTemplate rabbitTemplate, SharedResources sharedResources, UserService userService, PilaCoinService pilaCoinService) {
+        this.rabbitTemplate = rabbitTemplate;
         this.sharedResources = sharedResources;
+        this.userService = userService;
+        this.pilaCoinService = pilaCoinService;
     }
 
     public void send(String topic, String object) {
@@ -66,28 +70,33 @@ public class RabbitService implements DifficultyObserver {
         }
     }
 
+    @SneakyThrows
     @RabbitListener(queues = {"Luiz Felipe-query"})
-    public void query(@Payload QueryResponse query) {
+    public void query(@Payload String query) {
+        QueryResponse queryResponse = this.objectReader.readValue(query, QueryResponse.class);
+        if(queryResponse.getIdQuery() == 1) {
+            List<Usuario> users = queryResponse.getUsuariosResult();
+            this.saveUsers(users);
+        } else if(queryResponse.getIdQuery() == 2) {
+            List<QueryResponsePila> pilaCoins = queryResponse.getPilasResult();
+            this.saveAllQueryResponsePilas(pilaCoins);
+        }
+    }
+
+    public void saveUsers(List<Usuario> users) {
+        this.userService.saveAll(users);
+    }
+
+    public void saveAllQueryResponsePilas(List<QueryResponsePila> queryResponsePilas) {
+        this.pilaCoinService.saveAllQueryResponsePilas(queryResponsePilas);
     }
 
     @SneakyThrows
     public void sendQuery(QueryRequest query) {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        query.setIdQuery(1l);
-        query.setTipoQuery(QueryType.USUARIOS);
         String queryJson = ow.writeValueAsString(query);
         this.send("query", queryJson);
     }
-
-    /*
-
-    @RabbitListener(queues = {"luiz_felipe"})
-    public void rabbitResponse(@Payload Message message) {
-        String responseMessage = new String(message.getBody());
-        String outputColor = responseMessage.contains("erro") ? Colors.ANSI_RED : Colors.ANSI_GREEN;
-        System.out.println(outputColor + responseMessage + Colors.ANSI_RESET);
-    }*/
-
 
     @Override
     public void update(BigInteger difficulty) {

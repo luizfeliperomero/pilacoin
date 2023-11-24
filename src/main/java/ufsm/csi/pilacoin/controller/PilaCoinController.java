@@ -4,13 +4,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.*;
-import ufsm.csi.pilacoin.model.PilaCoin;
-import ufsm.csi.pilacoin.model.QueryRequest;
-import ufsm.csi.pilacoin.model.QueryResponse;
+import ufsm.csi.pilacoin.constants.AppInfo;
+import ufsm.csi.pilacoin.model.*;
 import ufsm.csi.pilacoin.service.DifficultyService;
 import ufsm.csi.pilacoin.service.PilaCoinService;
 import ufsm.csi.pilacoin.service.RabbitService;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -50,8 +50,27 @@ public class PilaCoinController {
         return ResponseEntity.ok(pilaCoins);
     }
     @PostMapping("/query")
-    public void query(@Payload QueryRequest queryRequest) {
+    public void query() {
+        QueryRequest queryRequest = QueryRequest.builder()
+                .idQuery(2)
+                .tipoQuery(QueryType.PILA)
+                .nomeUsuario(AppInfo.DEFAULT_NAME)
+                .status(StatusPila.VALIDO)
+                .usuarioMinerador(AppInfo.DEFAULT_NAME)
+                .build();
+
         this.rabbitService.sendQuery(queryRequest);
+    }
+
+    @DeleteMapping("/deleteAllQueryResponsePilas")
+    public ResponseEntity deleteAllQueryResponsePilas() {
+       this.pilaCoinService.deleteAllQueryResponsePilas();
+       return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/queryResponsePilas/{offset}/{pageSize}/{field}")
+    public ResponseEntity<Page<QueryResponsePila>> getQueryResponsePilas(@PathVariable int offset, @PathVariable int pageSize, @PathVariable String field) {
+       return ResponseEntity.ok(this.pilaCoinService.getQueryResponsePilas(offset, pageSize, field));
     }
 
 }

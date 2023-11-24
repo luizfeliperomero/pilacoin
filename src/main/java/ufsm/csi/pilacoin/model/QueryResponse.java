@@ -4,13 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class QueryResponse {
     Long idQuery;
     String usuario;
-    PilaCoin[] pilasResult;
-    Block[] blocosResult;
-    String[] usuariosResult;
+    List<QueryResponsePila> pilasResult;
+    List<Block> blocosResult;
+    List<Usuario> usuariosResult;
 }
