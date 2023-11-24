@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import org.springframework.boot.autoconfigure.web.WebProperties;
 
 import java.util.Date;
 
@@ -20,6 +22,7 @@ public class Transaction {
     private String noncePila;
     private Date dataTransacao;
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String status;
 }

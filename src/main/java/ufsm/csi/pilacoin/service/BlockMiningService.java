@@ -48,7 +48,7 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
         String json = "";
         int count = 0;
         Random random = new Random();
-        this.block.setChaveUsuarioMinerador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8));
+        this.block.setChaveUsuarioMinerador(this.sharedResources.getPublicKey().getEncoded());
         this.block.setNomeUsuarioMinerador(AppInfo.DEFAULT_NAME);
         while (!this.stopMining) {
             byte[] byteArray = new byte[256 / 8];
@@ -61,7 +61,7 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
                 System.out.printf( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Colors.BLACK_BACKGROUND + "Block found in " + Colors.WHITE_BOLD_BRIGHT + "%,d" + " tries" + Colors.ANSI_RESET + "\n", count);
                 System.out.println(json);
                 this.rabbitService.send("bloco-minerado", json);
-                //this.blockRepository.save(this.block);
+                this.blockRepository.save(this.block);
             }
         }
         Thread.currentThread().interrupt();

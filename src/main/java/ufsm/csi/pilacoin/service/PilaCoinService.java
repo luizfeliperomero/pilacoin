@@ -6,7 +6,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ufsm.csi.pilacoin.model.PilaCoin;
 import ufsm.csi.pilacoin.model.PilaTransfer;
+import ufsm.csi.pilacoin.model.QueryResponsePila;
 import ufsm.csi.pilacoin.repository.PilaCoinRepository;
+import ufsm.csi.pilacoin.repository.QueryResponsePilaRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -15,9 +17,11 @@ import java.util.List;
 @Service
 public class PilaCoinService {
     private final PilaCoinRepository pilaCoinRepository;
+    private final QueryResponsePilaRepository queryResponsePilaRepository;
 
-    public PilaCoinService(PilaCoinRepository pilaCoinRepository) {
+    public PilaCoinService(PilaCoinRepository pilaCoinRepository, QueryResponsePilaRepository queryResponsePilaRepository) {
         this.pilaCoinRepository = pilaCoinRepository;
+        this.queryResponsePilaRepository = queryResponsePilaRepository;
     }
 
     public void transferPila(PilaCoin pilaCoin, String target_username, String target_user_key) {
@@ -30,7 +34,7 @@ public class PilaCoinService {
     }
 
     public void save(PilaCoin pilaCoin) {
-        pilaCoin.setId(0l);
+        pilaCoin.setId(0L);
         this.pilaCoinRepository.save(pilaCoin);
     }
 
@@ -38,7 +42,17 @@ public class PilaCoinService {
         return pilaCoinRepository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(field).descending()));
     }
 
+    public void saveAllQueryResponsePilas(List<QueryResponsePila> pilacoins) {
+        this.queryResponsePilaRepository.saveAll(pilacoins);
+    }
 
+    public void deleteAllQueryResponsePilas() {
+       this.queryResponsePilaRepository.deleteAll();
+    }
+
+    public Page<QueryResponsePila> getQueryResponsePilas(int offset, int pageSize, String field) {
+        return this.queryResponsePilaRepository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(field).descending()));
+    }
 
     public List<PilaCoin> getPilaCoins() {
         return this.pilaCoinRepository.findAll();

@@ -42,7 +42,7 @@ public class MiningService implements Runnable, DifficultyObserver {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         String json = "";
         PilaCoin pilaCoin = PilaCoin.builder()
-                .chaveCriador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
+                .chaveCriador(this.sharedResources.getPublicKey().getEncoded())
                 .nomeCriador(AppInfo.DEFAULT_NAME)
                 .build();
         int count = 0;
