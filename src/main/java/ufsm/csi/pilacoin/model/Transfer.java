@@ -3,29 +3,29 @@ package ufsm.csi.pilacoin.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigInteger;
 import java.util.Date;
 
-
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @JsonPropertyOrder(alphabetic = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PilaTransfer {
-    public byte[] chaveUsuarioOrigem;
-    public byte[] chaveUsuarioDestino;
-    public String nomeUsuarioOrigem;
-    public String nomeUsuarioDestino;
-    public byte[] assinatura;
-    public String noncePila;
-    public Date dataTransacao;
-    public Long id;
-    @JsonIgnore
-    public String status;
+public class Transfer {
+    private byte[] chaveUsuarioOrigem;
+    private byte[] chaveUsuarioDestino;
+    private String nomeUsuarioOrigem;
+    private String nomeUsuarioDestino;
+    private byte[] assinatura;
+    private String noncePila;
+    private Date dataTransacao;
+    private Long id;
+    private String status;
 }

@@ -2,6 +2,7 @@ package ufsm.csi.pilacoin.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import jakarta.transaction.Transactional;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ import java.util.Random;
 @Service
 public class BlockMiningService implements Runnable, BlockObserver, DifficultyObserver {
     private Block block;
-    private final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
+    private final ObjectWriter objectWriter = new ObjectMapper().writer();
     private final SharedResources sharedResources;
     private BigInteger difficulty;
     private final RabbitService rabbitService;
@@ -50,8 +51,8 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
         Random random = new Random();
         this.block.setChaveUsuarioMinerador(this.sharedResources.getPublicKey().getEncoded());
         this.block.setNomeUsuarioMinerador(AppInfo.DEFAULT_NAME);
+        byte[] byteArray = new byte[256 / 8];
         while (!this.stopMining) {
-            byte[] byteArray = new byte[256 / 8];
             random.nextBytes(byteArray);
             this.block.setNonce(new BigInteger(md.digest(byteArray)).abs());
             json = objectWriter.writeValueAsString(this.block);
@@ -61,7 +62,9 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
                 System.out.printf( MessageFormatterService.threadIdentifierMessage(Thread.currentThread()) + Colors.BLACK_BACKGROUND + "Block found in " + Colors.WHITE_BOLD_BRIGHT + "%,d" + " tries" + Colors.ANSI_RESET + "\n", count);
                 System.out.println(json);
                 this.rabbitService.send("bloco-minerado", json);
-                this.blockRepository.save(this.block);
+                this.sharedResources.updateBlocksFoundPerDifficulty(this.difficulty);
+                this.sharedResources.updateBlocksFoundPerThread(Thread.currentThread().getName());
+                this.save(this.block);
             }
         }
         Thread.currentThread().interrupt();
@@ -69,6 +72,11 @@ public class BlockMiningService implements Runnable, BlockObserver, DifficultyOb
 
     public void stopMining() {
         this.stopMining = true;
+    }
+
+    @Transactional
+    public void save(Block block) {
+        this.blockRepository.save(block);
     }
 
     @Override

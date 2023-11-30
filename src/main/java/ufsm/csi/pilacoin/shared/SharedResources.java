@@ -18,12 +18,16 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import ufsm.csi.pilacoin.constants.Colors;
 import ufsm.csi.pilacoin.service.MessageFormatterService;
 
+import javax.crypto.Cipher;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -85,10 +89,27 @@ public class SharedResources {
     }
 
     @SneakyThrows
+    public void generateKeys() {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048);
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        this.publicKey = keyPair.getPublic();
+        this.privateKey = keyPair.getPrivate();
+        FileOutputStream fosPublic = new FileOutputStream("public-key");
+        fosPublic.write(this.publicKey.getEncoded());
+        fosPublic.close();
+        FileOutputStream fosPrivate = new FileOutputStream("private-key");
+        fosPrivate.write(this.privateKey.getEncoded());
+        fosPrivate.close();
+    }
+
+    @SneakyThrows
     public void getKeys() {
         try {
-            FileInputStream fosPublic = new FileInputStream("/usr/local/lib/public-key");
-            FileInputStream fosPrivate = new FileInputStream("/usr/local/lib/private-key");
+            //FileInputStream fosPublic = new FileInputStream("/usr/local/lib/public-key");
+            //FileInputStream fosPrivate = new FileInputStream("/usr/local/lib/private-key");
+            FileInputStream fosPublic = new FileInputStream("public-key");
+            FileInputStream fosPrivate = new FileInputStream("private-key");
             byte[] encodedPublic = new byte[fosPublic.available()];
             byte[] encodedPrivate = new byte[fosPrivate.available()];
             fosPublic.read(encodedPublic);
@@ -104,6 +125,15 @@ public class SharedResources {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @SneakyThrows
+    public byte[] generateSignature(String str) {
+        Cipher encryptCipher = Cipher.getInstance("RSA");
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        encryptCipher.init(Cipher.ENCRYPT_MODE, this.getPrivateKey());
+        byte[] hash = md.digest(str.getBytes(StandardCharsets.UTF_8));
+        return encryptCipher.doFinal(hash);
     }
 
     public synchronized Map<String, Integer> getPilaCoinsFoundPerDifficulty() {
@@ -136,30 +166,49 @@ public class SharedResources {
         }
     }
 
+    public void sendBlocksFoundPerThread() {
+        if(!this.blocksFoundPerThread.isEmpty()) {
+            this.template.convertAndSend("/topic/blocks_found_per_thread", this.blocksFoundPerThread);
+        }
+    }
+
     //@Scheduled(fixedRate = 4000)
     public void sendPilacoinsTotal() {
         this.template.convertAndSend("/topic/total_pilacoins", this.pilacoinsFound);
     }
 
+    public void sendBlocksTotal() {
+        this.template.convertAndSend("/topic/total_blocks", this.blocksFound);
+    }
+
     public synchronized void updatePilaCoinsFoundPerDifficulty(BigInteger difficulty) {
         this.pilacoinsFound++;
         this.sendPilacoinsTotal();
-        if(!this.firstPilacoinsTotalSent) {
-            this.firstPilacoinsTotalSent = true;
-        }
         pilaCoinsFoundPerDifficulty.merge(difficulty.toString(), 1, Integer::sum);
         this.sendPilacoinsFoundPerDifficulty();
-        if(!this.firstPilacoinsFoundPerDifficultySent) {
-            this.firstPilacoinsFoundPerDifficultySent = true;
+    }
+
+    public void sendBlocksFoundPerDifficulty() {
+        if(!this.blocksFoundPerDifficulty.isEmpty()) {
+            this.template.convertAndSend("/topic/blocks_found_per_difficulty", this.blocksFoundPerDifficulty);
         }
+    }
+
+    public synchronized void updateBlocksFoundPerDifficulty(BigInteger difficulty) {
+        this.blocksFound++;
+        this.sendBlocksTotal();
+        blocksFoundPerDifficulty.merge(difficulty, 1, Integer::sum);
+        this.sendBlocksFoundPerDifficulty();
+    }
+
+    public synchronized void updateBlocksFoundPerThread(String threadName) {
+        blocksFoundPerThread.merge(threadName, 1, Integer::sum);
+        this.sendBlocksFoundPerThread();
     }
 
     public synchronized void updatePilaCoinsFoundPerThread(String threadName) {
         pilaCoinsFoundPerThread.merge(threadName, 1, Integer::sum);
         this.sendPilacoinsFoundPerThread();
-        if(!this.firstPilacoinsFoundPerThreadSent) {
-            this.firstPilacoinsFoundPerThreadSent = true;
-        }
     }
 
     private void printMiningData() {

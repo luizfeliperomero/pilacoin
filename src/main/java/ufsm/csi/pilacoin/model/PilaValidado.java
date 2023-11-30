@@ -17,5 +17,5 @@ public class PilaValidado {
     private String nomeValidador;
     private byte[] chavePublicaValidador;
     private byte[] assinaturaPilaCoin;
-    private PilaCoin pilaCoin;
+    private PilaCoin pilaCoinJson;
 }

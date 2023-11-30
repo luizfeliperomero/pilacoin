@@ -38,6 +38,12 @@ public class PilaCoinController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/transfer")
+    public ResponseEntity transfer(@RequestBody TransferRequest transferRequest) {
+        this.rabbitService.transfer(transferRequest.getUser(), transferRequest.getPilaCoin());
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/stopMining")
     public ResponseEntity stopMining() {
         this.difficultyService.stopMining();

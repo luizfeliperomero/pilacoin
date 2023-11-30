@@ -4,9 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import ufsm.csi.pilacoin.model.PilaCoin;
-import ufsm.csi.pilacoin.model.PilaTransfer;
-import ufsm.csi.pilacoin.model.QueryResponsePila;
+import ufsm.csi.pilacoin.model.*;
 import ufsm.csi.pilacoin.repository.PilaCoinRepository;
 import ufsm.csi.pilacoin.repository.QueryResponsePilaRepository;
 
@@ -49,6 +47,7 @@ public class PilaCoinService {
     public void deleteAllQueryResponsePilas() {
        this.queryResponsePilaRepository.deleteAll();
     }
+
 
     public Page<QueryResponsePila> getQueryResponsePilas(int offset, int pageSize, String field) {
         return this.queryResponsePilaRepository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(field).descending()));

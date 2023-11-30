@@ -18,7 +18,9 @@ import javax.crypto.Cipher;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class RabbitService implements DifficultyObserver {
@@ -54,16 +56,13 @@ public class RabbitService implements DifficultyObserver {
                 pilaCoin = this.objectReader.readValue(pilaCoinStr, PilaCoin.class);
             } catch(Exception e) {}
             if (this.difficulty != null &&  pilaCoin != null && !pilaCoin.getNomeCriador().equals(AppInfo.DEFAULT_NAME) && (hash.compareTo(this.difficulty) < 0)) {
-                Cipher encryptCipher = Cipher.getInstance("RSA");
-                encryptCipher.init(Cipher.ENCRYPT_MODE, this.sharedResources.getPrivateKey());
-                byte[] hashByteArr = hash.toString().getBytes(StandardCharsets.UTF_8);
                 PilaValidado pilaValidado = PilaValidado.builder()
                         .nomeValidador(AppInfo.DEFAULT_NAME)
-                        .chavePublicaValidador(this.sharedResources.getPublicKey().toString().getBytes(StandardCharsets.UTF_8))
-                        .assinaturaPilaCoin(encryptCipher.doFinal(hashByteArr))
-                        .pilaCoin(pilaCoin)
+                        .chavePublicaValidador(this.sharedResources.getPublicKey().getEncoded())
+                        .assinaturaPilaCoin(this.sharedResources.generateSignature(pilaCoinStr))
+                        .pilaCoinJson(pilaCoin)
                         .build();
-                System.out.println(Colors.WHITE_BOLD_BRIGHT + pilaValidado.getPilaCoin().getNomeCriador() + "'s " + Colors.ANSI_CYAN + "Pila valid!" + Colors.ANSI_RESET);
+                System.out.println(Colors.WHITE_BOLD_BRIGHT + pilaValidado.getPilaCoinJson().getNomeCriador() + "'s " + Colors.ANSI_CYAN + "Pila valid!" + Colors.ANSI_RESET);
                 String json = this.objectWriter.writeValueAsString(pilaValidado);
                 this.send("pila-validado", json);
             } else this.send("pila-minerado", pilaCoinStr);
@@ -71,7 +70,17 @@ public class RabbitService implements DifficultyObserver {
     }
 
     @SneakyThrows
-    @RabbitListener(queues = {"Luiz Felipe-query"})
+    @RabbitListener(queues = "report")
+    public void getReport(@Payload String report) {
+        List<Report> reports = List.of(this.objectReader.readValue(report, Report[].class));
+        Optional<Report> myReport = reports.stream()
+                .filter(r  -> r.getNomeUsuario() != null && r.getNomeUsuario().equals(AppInfo.DEFAULT_NAME))
+                .findFirst();
+        System.out.println(myReport);
+    }
+
+    @SneakyThrows
+    @RabbitListener(queues = {"luizf-query"})
     public void query(@Payload String query) {
         QueryResponse queryResponse = this.objectReader.readValue(query, QueryResponse.class);
         if(queryResponse.getIdQuery() == 1) {
@@ -83,12 +92,33 @@ public class RabbitService implements DifficultyObserver {
         }
     }
 
+    @RabbitListener(queues = "luizf")
+    public void user(@Payload String str) {
+        System.out.println(str);
+    }
+
     public void saveUsers(List<Usuario> users) {
         this.userService.saveAll(users);
     }
 
     public void saveAllQueryResponsePilas(List<QueryResponsePila> queryResponsePilas) {
         this.pilaCoinService.saveAllQueryResponsePilas(queryResponsePilas);
+    }
+
+    @SneakyThrows
+    public void transfer(Usuario user, PilaCoin pilaCoin) {
+        Transfer transfer = Transfer.builder()
+                .noncePila(pilaCoin.getNonce())
+                .chaveUsuarioOrigem(this.sharedResources.getPublicKey().getEncoded())
+                .dataTransacao(new Date(System.currentTimeMillis()))
+                .nomeUsuarioDestino(user.getNome())
+                .chaveUsuarioDestino(user.getChavePublica())
+                .nomeUsuarioOrigem(AppInfo.DEFAULT_NAME)
+                .build();
+        String transferJson = this.objectWriter.writeValueAsString(transfer);
+        transfer.setAssinatura(this.sharedResources.generateSignature(transferJson));
+        transferJson = this.objectWriter.writeValueAsString(transfer);
+        this.send("transferir-pila", transferJson);
     }
 
     @SneakyThrows
