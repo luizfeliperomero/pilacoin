@@ -13,6 +13,7 @@ import ufsm.csi.pilacoin.shared.SharedResources;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Random;
 
@@ -48,12 +49,12 @@ public class MiningService implements Runnable, DifficultyObserver {
         int count = 0;
         Random random = new Random();
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        byte[] byteArray = new byte[256 / 8];
 
         while(!stopMining) {
-            byte[] byteArray = new byte[256 / 8];
             random.nextBytes(byteArray);
             pilaCoin.setNonce(new BigInteger(md.digest(byteArray)).abs().toString());
-            pilaCoin.setDataCriacao(new Date(System.currentTimeMillis()));
+            pilaCoin.setDataCriacao(Date.from(Instant.now()));
             json = ow.writeValueAsString(pilaCoin);
             hash = new BigInteger(md.digest(json.getBytes(StandardCharsets.UTF_8))).abs();
             count++;

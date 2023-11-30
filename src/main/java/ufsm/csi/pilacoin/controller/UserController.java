@@ -2,10 +2,7 @@ package ufsm.csi.pilacoin.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ufsm.csi.pilacoin.constants.AppInfo;
 import ufsm.csi.pilacoin.model.QueryRequest;
 import ufsm.csi.pilacoin.model.QueryType;
@@ -16,6 +13,7 @@ import ufsm.csi.pilacoin.service.UserService;
 import java.util.List;
 
 @RestController
+@CrossOrigin("*")
 @RequestMapping("/user")
 public class UserController {
     private final UserService userService;
